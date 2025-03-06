@@ -25,10 +25,25 @@ actor AppFreshStorage {
 public final class AppFresh: NSObject, Sendable {
     private static let storage = AppFreshStorage()
     
-    public static func hasUpdate(_ bundleIdentifier: String? = nil) async -> Bool {
+    /**
+     * Checks if a newer version of the app is available on the App Store. It compares the app’s current version with the
+     * latest version available for the app’s bundle identifier. Optionally, the function allows specifying a country code
+     * to retrieve the update information for a specific country.
+     *
+     * - Parameters:
+     *      - bundleIdentifier: The bundle identifier of the app. If `nil`,
+     *      the function uses the bundle identifier from the main app bundle. Default is `nil`.
+     *     - countryCode: The country code for the App Store (e.g., "us" for the United States).
+     *     Default is `"us"`. In case your app is not available in the US you need to provide a country code,
+     *     otherwise the library cannot find your app info.
+     *
+     * - Returns: `true` if an update is available, `false` if the app is up-to-date or
+     * there was an error fetching the update information.
+     */
+    public static func hasUpdate(_ bundleIdentifier: String? = nil, countryCode: String = "us") async -> Bool {
         guard
             let bundleId = bundleIdentifier ?? Bundle.main.bundleIdentifier,
-            let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleId)")
+            let url = URL(string: "https://itunes.apple.com/\(countryCode)/lookup?bundleId=\(bundleId)")
         else {
             print("[AppFresh] No bundle identifier found. Provide one.")
             return false
@@ -57,10 +72,17 @@ public final class AppFresh: NSObject, Sendable {
         return isVersion(currentVersion, olderThan: latestVersion)
     }
     
+    /**
+     * Open the app store directly into the apps page where the user can update it.
+     * In order for `openAppStore()` to work, `hasUpdate()` needs to be called at least once before.
+     */
     public static func openAppStore() {
         Task { @MainActor in
             guard let urlString = await storage.appInfo?.trackViewUrl,
-                  let url = URL(string: urlString) else { return }
+                  let url = URL(string: urlString) else {
+                print("[AppFresh] There is no app url to open. You need to call `AppFresh.hasUpdate()` first.")
+                return
+            }
             
             await UIApplication.shared.open(url)
         }
