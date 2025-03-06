@@ -40,6 +40,7 @@ public final class AppFresh: NSObject, Sendable {
      * - Returns: `true` if an update is available, `false` if the app is up-to-date or
      * there was an error fetching the update information.
      */
+    @objc
     public static func hasUpdate(_ bundleIdentifier: String? = nil, countryCode: String = "us") async -> Bool {
         guard
             let bundleId = bundleIdentifier ?? Bundle.main.bundleIdentifier,
@@ -76,6 +77,7 @@ public final class AppFresh: NSObject, Sendable {
      * Open the app store directly into the apps page where the user can update it.
      * In order for `openAppStore()` to work, `hasUpdate()` needs to be called at least once before.
      */
+    @objc
     public static func openAppStore() {
         Task { @MainActor in
             guard let urlString = await storage.appInfo?.trackViewUrl,
