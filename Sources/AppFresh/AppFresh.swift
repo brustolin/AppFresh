@@ -25,29 +25,32 @@ actor AppFreshStorage {
 public final class AppFresh: NSObject, Sendable {
     private static let storage = AppFreshStorage()
     
-    @MainActor
-    static var dae: AppInfo?
-    
     public static func hasUpdate(_ bundleIdentifier: String? = nil) async -> Bool {
         guard
             let bundleId = bundleIdentifier ?? Bundle.main.bundleIdentifier,
             let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleId)")
         else {
-            print("No bundle identifier found. Provide one.")
+            print("[AppFresh] No bundle identifier found. Provide one.")
             return false
         }
         
         guard let appInfo = await fetchAppInfo(from: url) else { return false }
         await storage.setAppInfo(appInfo)
         
-        guard let latestVersion = appInfo.version,
-              let minOsVersion = appInfo.minimumOsVersion,
-              let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        guard let latestVersion = appInfo.version
         else {
+            print("[AppFresh] Could not extract latest app version from the app info.")
             return false
         }
         
-        guard await isOsVersionCompatible(minOsVersion) else {
+        guard let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        else {
+            print("[AppFresh] No app version found in the main bundle")
+            return false
+        }
+        
+        // If there is no minimumOsVersion in the app info, assume it works on every version.
+        if let minimumOsVersion = appInfo.minimumOsVersion, await !isOsVersionCompatible(minimumOsVersion) {
             return false
         }
         
@@ -64,14 +67,15 @@ public final class AppFresh: NSObject, Sendable {
     }
     
     private static func fetchAppInfo(from url: URL) async -> AppInfo? {
-        var data: Data?
-        do {
-            (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
-        } catch {
-            print("[AppFresh] Could not fetch app info: \(error)")
-            return nil
-        }
-        guard let data else { return nil }
+        guard var data: Data = await {
+            do {
+                let (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
+                return data
+            } catch {
+                print("[AppFresh] Could not fetch app info: \(error)")
+                return nil
+            }
+        }() else { return nil }
         
         do {
             let lookup = try JSONDecoder().decode(ItunesLookupResponse.self, from: data)

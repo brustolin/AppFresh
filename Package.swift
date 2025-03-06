@@ -10,8 +10,6 @@ let package = Package(
             targets: ["AppFresh"]),
     ],
     targets: [
-        .target(
-            name: "AppFresh"),
-
+        .target(name: "AppFresh")
     ]
 )
