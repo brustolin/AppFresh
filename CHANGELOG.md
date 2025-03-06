@@ -1,15 +1,3 @@
-# 1.1.1
-
-## Fixes
-
-- Make `hasUpdate` and `openAppStore` functions available for Obj-c.
-
-# 1.1.0
-
-## Features
-
-- Add country code option when checking for updates
-
 # 1.0.0
 
 ## Features

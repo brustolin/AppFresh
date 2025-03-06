@@ -1,4 +1,8 @@
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import Foundation
 
 struct AppInfo: Decodable {
@@ -86,12 +90,17 @@ public final class AppFresh: NSObject, Sendable {
                 return
             }
             
+#if canImport(UIKit)
             await UIApplication.shared.open(url)
+#elseif canImport(AppKit)
+            NSWorkspace.shared.open(url)
+#endif
+            
         }
     }
     
     private static func fetchAppInfo(from url: URL) async -> AppInfo? {
-        guard var data: Data = await {
+        guard let data: Data = await {
             do {
                 let (data, _) = try await URLSession.shared.data(for: URLRequest(url: url))
                 return data
@@ -124,7 +133,13 @@ public final class AppFresh: NSObject, Sendable {
     
     @MainActor
     private static func isOsVersionCompatible(_ minVersion: String) -> Bool {
-        let systemVersion = UIDevice.current.systemVersion
-        return !isVersion(systemVersion, olderThan: minVersion)
+#if canImport(UIKit)
+        let versionString = UIDevice.current.systemVersion
+#elseif canImport(AppKit)
+        let systemVersion = ProcessInfo.processInfo.operatingSystemVersion
+        let versionString = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
+#endif
+        
+        return !isVersion(versionString, olderThan: minVersion)
     }
 }
