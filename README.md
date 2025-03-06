@@ -1,6 +1,6 @@
 # AppFresh
 
-AppFresh is a lightweight Swift library that checks for updates of an iOS app on the App Store using the iTunes Lookup API, no self hosting required. It also provides a convenient way to open the App Store for updating the app.
+AppFresh is a lightweight Swift library that checks for updates of an app on the App Store using the iTunes Lookup API, no self hosting required. It also provides a convenient way to open the App Store for updating the app.
 
 ## Features
 - Fetch the latest app version from the App Store.
